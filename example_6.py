@@ -23,6 +23,7 @@ async def main():
 
     # 2) Run the same function in separate processes.
     # Useful for CPU-bound work and true parallel execution across CPU cores.
+    print("PART 2: RUNNING SAME FUNCTIONS WITH SYNC CODE IN PROCESSES")
     loop = asyncio.get_running_loop()
 
     with ProcessPoolExecutor() as executor:
