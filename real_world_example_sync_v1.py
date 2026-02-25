@@ -2,7 +2,13 @@ import time
 from pathlib import Path
 
 import requests
-from PIL import Image
+try:
+    from PIL import Image
+except ModuleNotFoundError as exc:
+    raise SystemExit(
+        "Missing dependency: Pillow. Install project deps with "
+        "`python3 -m pip install -r requirements.txt`."
+    ) from exc
 
 IMAGE_URLS = [
     "https://images.unsplash.com/photo-1516117172878-fd2c41f4a759?w=1920&h=1080&fit=crop",

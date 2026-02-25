@@ -6,7 +6,13 @@ from pathlib import Path
 
 import aiofiles
 import httpx
-from PIL import Image
+try:
+    from PIL import Image
+except ModuleNotFoundError as exc:
+    raise SystemExit(
+        "Missing dependency: Pillow. Install project deps with "
+        "`python3 -m pip install -r requirements.txt`."
+    ) from exc
 
 DOWNLOAD_LIMIT = 4
 CPU_WORKERS = os.cpu_count()
