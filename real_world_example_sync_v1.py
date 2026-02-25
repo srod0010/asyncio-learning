@@ -25,6 +25,7 @@ PROCESSED_DIR = Path("processed_images")
 
 
 def download_single_image(session: requests.Session, url: str, img_num: int) -> Path:
+    # Synchronous HTTP download: each call blocks until complete.
     print(f"Downloading {url}...")
     ts = int(time.time())
     url = f"{url}?ts={ts}"  # Add timestamp to avoid caching issues
@@ -43,6 +44,7 @@ def download_single_image(session: requests.Session, url: str, img_num: int) -> 
 
 
 def download_images(urls: list) -> list[Path]:
+    # Sequential downloads (no overlap).
     with requests.Session() as session:
         img_paths = [
             download_single_image(session, url, img_num)
@@ -53,6 +55,7 @@ def download_images(urls: list) -> list[Path]:
 
 
 def process_single_image(orig_path: Path) -> Path:
+    # CPU-bound image transform (edge-like thresholding).
     save_path = PROCESSED_DIR / orig_path.name
 
     with Image.open(orig_path) as img:
@@ -98,6 +101,7 @@ def process_single_image(orig_path: Path) -> Path:
 
 
 def process_images(orig_paths: list[Path]) -> list[Path]:
+    # Sequential CPU processing.
     img_paths = [process_single_image(orig_path) for orig_path in orig_paths]
 
     return img_paths
@@ -109,10 +113,12 @@ def main():
 
     start_time = time.perf_counter()
 
+    # Phase 1: blocking network downloads.
     img_paths = download_images(IMAGE_URLS)
 
     proc_start_time = time.perf_counter()
 
+    # Phase 2: blocking CPU processing.
     processed_paths = process_images(img_paths)
 
     finished_time = time.perf_counter()

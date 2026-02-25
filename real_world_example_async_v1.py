@@ -26,6 +26,7 @@ PROCESSED_DIR = Path("processed_images")
 
 
 def download_single_image(url: str, img_num: int) -> Path:
+    # Still synchronous requests code, so we offload this function to threads.
     print(f"Downloading {url}...")
     ts = int(time.time())
     url = f"{url}?ts={ts}"  # Add timestamp to avoid caching issues
@@ -44,6 +45,8 @@ def download_single_image(url: str, img_num: int) -> Path:
 
 
 async def download_images(urls: list) -> list[Path]:
+    # TaskGroup gives structured concurrency: all downloads run together and are
+    # awaited automatically when leaving the context manager.
     async with asyncio.TaskGroup() as tg:
         tasks = [
             tg.create_task(asyncio.to_thread(download_single_image, url, img_num))
@@ -56,6 +59,7 @@ async def download_images(urls: list) -> list[Path]:
 
 
 def process_single_image(orig_path: Path) -> Path:
+    # CPU-heavy processing function (sync), also offloaded to threads below.
     save_path = PROCESSED_DIR / orig_path.name
 
     with Image.open(orig_path) as img:
@@ -101,6 +105,8 @@ def process_single_image(orig_path: Path) -> Path:
 
 
 async def process_images(orig_paths: list[Path]) -> list[Path]:
+    # Uses threads to avoid blocking event loop, but CPU speedup may be limited
+    # by Python's GIL for pure-Python workloads.
     async with asyncio.TaskGroup() as tg:
         tasks = [
             tg.create_task(asyncio.to_thread(process_single_image, orig_path))
@@ -118,10 +124,12 @@ async def main():
 
     start_time = time.perf_counter()
 
+    # Phase 1: many downloads overlap via to_thread + TaskGroup.
     img_paths = await download_images(IMAGE_URLS)
 
     proc_start_time = time.perf_counter()
 
+    # Phase 2: processing overlaps in threads.
     processed_paths = await process_images(img_paths)
 
     finished_time = time.perf_counter()
@@ -142,4 +150,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Creates and runs the event loop for the pipeline.
     asyncio.run(main())

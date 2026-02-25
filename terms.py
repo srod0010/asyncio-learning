@@ -3,6 +3,7 @@ import time
 
 
 def sync_function(test_param: str) -> str:
+    # Regular blocking function: runs immediately when called.
     print("This is a synchronous function.")
 
     time.sleep(0.1)
@@ -12,8 +13,10 @@ def sync_function(test_param: str) -> str:
 
 # ALSO KNOWN AS A COROUTINE FUNCTION
 async def async_function(test_param: str) -> str:
+    # Coroutine function: returns a coroutine object when called.
     print("This is an asynchronous coroutine function.")
 
+    # Yield point back to event loop.
     await asyncio.sleep(0.1)
 
     return f"Async Result: {test_param}"
@@ -37,12 +40,15 @@ async def main():
     # coroutine_result = await coroutine_obj
     # print(coroutine_result)
 
+    # A Task wraps and schedules a coroutine on the running event loop.
     task = asyncio.create_task(async_function("Test"))
     print(task)
 
+    # Awaiting a Task gives its result once done.
     task_result = await task
     print(task_result)
 
 
 if __name__ == "__main__":
+    # Bootstraps the event loop for this demo.
     asyncio.run(main())

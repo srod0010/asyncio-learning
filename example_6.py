@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 
 def fetch_data(param):
+    # Synchronous/blocking function used to simulate work.
     print(f"Do something with {param}...", flush=True)
     time.sleep(param)
     print(f"Done with {param}", flush=True)
@@ -11,7 +12,8 @@ def fetch_data(param):
 
 
 async def main():
-    # Run in Threads
+    # 1) Run blocking function in threads.
+    # `asyncio.to_thread` keeps the event loop responsive while thread work runs.
     task1 = asyncio.create_task(asyncio.to_thread(fetch_data, 1))
     task2 = asyncio.create_task(asyncio.to_thread(fetch_data, 2))
     result1 = await task1
@@ -19,7 +21,8 @@ async def main():
     result2 = await task2
     print("Thread 2 fully completed")
 
-    # Run in Process Pool
+    # 2) Run the same function in separate processes.
+    # Useful for CPU-bound work and true parallel execution across CPU cores.
     loop = asyncio.get_running_loop()
 
     with ProcessPoolExecutor() as executor:
@@ -35,6 +38,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Measures combined time for thread stage + process stage.
     t1 = time.perf_counter()
 
     results = asyncio.run(main())

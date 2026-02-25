@@ -32,6 +32,7 @@ async def download_single_image(
     url: str,
     img_num: int,
 ) -> Path:
+    # Fully async network + async file writes: no thread offload needed.
     print(f"Downloading {url}...")
     ts = int(time.time())
     url = f"{url}?ts={ts}"  # Add timestamp to avoid caching issues
@@ -51,6 +52,7 @@ async def download_single_image(
 
 
 async def download_images(urls: list) -> list[Path]:
+    # One async HTTP client reused across all requests (connection pooling).
     async with httpx.AsyncClient() as client:
         async with asyncio.TaskGroup() as tg:
             tasks = [
@@ -64,6 +66,7 @@ async def download_images(urls: list) -> list[Path]:
 
 
 def process_single_image(orig_path: Path) -> Path:
+    # CPU-bound function intentionally left synchronous for process-pool offload.
     save_path = PROCESSED_DIR / orig_path.name
 
     with Image.open(orig_path) as img:
@@ -109,6 +112,7 @@ def process_single_image(orig_path: Path) -> Path:
 
 
 async def process_images(orig_paths: list[Path]) -> list[Path]:
+    # CPU work is pushed to separate processes for real parallelism.
     loop = asyncio.get_running_loop()
 
     with ProcessPoolExecutor() as executor:
@@ -128,10 +132,12 @@ async def main():
 
     start_time = time.perf_counter()
 
+    # Phase 1: high-concurrency async downloads.
     img_paths = await download_images(IMAGE_URLS)
 
     proc_start_time = time.perf_counter()
 
+    # Phase 2: CPU processing in process pool.
     processed_paths = await process_images(img_paths)
 
     finished_time = time.perf_counter()

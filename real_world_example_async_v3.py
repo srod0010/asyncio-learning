@@ -38,6 +38,7 @@ async def download_single_image(
     img_num: int,
     semaphore: asyncio.Semaphore,
 ) -> Path:
+    # Semaphore caps in-flight downloads to avoid overwhelming network/server.
     async with semaphore:
         print(f"Downloading {url}...")
         ts = int(time.time())
@@ -59,6 +60,7 @@ async def download_single_image(
 
 
 async def download_images(urls: list) -> list[Path]:
+    # Bounded concurrency for I/O stage.
     dl_semaphore = asyncio.Semaphore(DOWNLOAD_LIMIT)
     async with httpx.AsyncClient() as client:
         async with asyncio.TaskGroup() as tg:
@@ -75,6 +77,7 @@ async def download_images(urls: list) -> list[Path]:
 
 
 def process_single_image(orig_path: Path) -> Path:
+    # CPU-bound image transform for process pool.
     save_path = PROCESSED_DIR / orig_path.name
 
     with Image.open(orig_path) as img:
@@ -120,6 +123,7 @@ def process_single_image(orig_path: Path) -> Path:
 
 
 async def process_images(orig_paths: list[Path]) -> list[Path]:
+    # ProcessPoolExecutor bypasses GIL and scales CPU stage with core count.
     loop = asyncio.get_running_loop()
 
     with ProcessPoolExecutor(max_workers=CPU_WORKERS) as executor:
@@ -139,10 +143,12 @@ async def main():
 
     start_time = time.perf_counter()
 
+    # Phase 1: async I/O with concurrency limit.
     img_paths = await download_images(IMAGE_URLS)
 
     proc_start_time = time.perf_counter()
 
+    # Phase 2: CPU stage in configurable process pool.
     processed_paths = await process_images(img_paths)
 
     finished_time = time.perf_counter()
