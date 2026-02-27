@@ -53,7 +53,8 @@ def practical_counter_and_file_demo() -> None:
     print("\n=== Practical Lock demo (shared counter + file) ===")
     lock = threading.Lock()
     counter = {"value": 0}
-    log_path = Path("thread_locks/lock_demo_output.log")
+    script_dir = Path(__file__).resolve().parent
+    log_path = script_dir / "lock_demo_output.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_path.write_text("")  # reset each run for easier learning
 

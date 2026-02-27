@@ -95,6 +95,7 @@ cover/
 # Django stuff:
 *.log
 thread_locks/lock_demo_output.log
+thread_locks/process_locks/demofile.txt
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
